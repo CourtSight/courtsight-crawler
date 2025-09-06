@@ -1,0 +1,7 @@
+clickhouse-connect
+scrapy
+google-generativeai
+beautifulsoup4
+python-dotenv
+PyMuPDF
+requests
