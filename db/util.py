@@ -234,6 +234,116 @@ def get_kategori_links():
         print(f"❌ Failed to get kategori links: {e}")
         return []
 
+def get_putusan_ma_links():
+    """
+    Get all links from putusan_ma table
+    
+    Returns:
+        List of tuples (link, title) or empty list if failed
+    """
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        
+        query = "SELECT link, title FROM putusan_ma ORDER BY id"
+        cur.execute(query)
+        results = cur.fetchall()
+        
+        cur.close()
+        conn.close()
+        
+        print(f"✅ Retrieved {len(results)} links from putusan_ma")
+        return results
+        
+    except Exception as e:
+        print(f"❌ Failed to get putusan_ma links: {e}")
+        return []
+
+def insert_informasi_putusan(data: Dict[str, Any]) -> Optional[int]:
+    """
+    Insert a new record into informasi_putusan table with duplicate prevention
+    
+    Args:
+        data: Dictionary containing the putusan information
+        
+    Returns:
+        The ID of the inserted record, or None if failed/duplicate
+    """
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        
+        # Check for duplicate link_detail
+        check_query = "SELECT id FROM informasi_putusan WHERE link_detail = %s"
+        cur.execute(check_query, (data.get('url', ''),))
+        existing_record = cur.fetchone()
+        
+        if existing_record:
+            print(f"⚠️  Duplicate informasi_putusan found: '{data.get('url', '')}' (ID: {existing_record[0]}). Skipping insertion.")
+            cur.close()
+            conn.close()
+            return existing_record[0]  # Return existing ID
+        
+        # Map the data fields to database columns
+        insert_data = {
+            'link_detail': data.get('url', ''),
+            'tingkat_proses': data.get('tingkat_proses'),
+            'klasifikasi': data.get('klasifikasi'),
+            'kata_kunci': data.get('kata_kunci'),
+            'lembaga_peradilan': data.get('lembaga_peradilan'),
+            'jenis_lembaga_peradilan': data.get('jenis_lembaga_peradilan'),
+            'hakim_ketua': data.get('hakim_ketua'),
+            'hakim_anggota': data.get('hakim_anggota'),
+            'panitera': data.get('panitera'),
+            'amar': data.get('amar'),
+            'amar_lainnya': data.get('amar_lainnya'),
+            'catatan_amar': data.get('catatan_amar'),
+            'kaidah': data.get('kaidah'),
+            'abstrak': data.get('abstrak'),
+            'putusan': str(data.get('putusan_terkait')),
+            'tahun_putusan': data.get('tahun'),
+            'tanggal_register': data.get('tanggal_register'),
+            'tanggal_musyawarah': data.get('tanggal_musyawarah'),
+            'tanggal_dibacakan': data.get('tanggal_dibacakan'),
+            'jumlah_view': data.get('jumlah_view'),
+            'jumlah_download': data.get('jumlah_download'),
+            'link_zip': data.get('link_zip'),
+            'link_pdf': data.get('link_pdf')
+        }
+        
+        # Insert new record
+        query = """
+        INSERT INTO informasi_putusan (
+            link_detail, tingkat_proses, klasifikasi, kata_kunci, lembaga_peradilan,
+            jenis_lembaga_peradilan, hakim_ketua, hakim_anggota, panitera, amar,
+            amar_lainnya, catatan_amar, kaidah, abstrak, putusan, tahun_putusan,
+            tanggal_register, tanggal_musyawarah, tanggal_dibacakan, jumlah_view,
+            jumlah_download, link_zip, link_pdf
+        )
+        VALUES (
+            %(link_detail)s, %(tingkat_proses)s, %(klasifikasi)s, %(kata_kunci)s, %(lembaga_peradilan)s,
+            %(jenis_lembaga_peradilan)s, %(hakim_ketua)s, %(hakim_anggota)s, %(panitera)s, %(amar)s,
+            %(amar_lainnya)s, %(catatan_amar)s, %(kaidah)s, %(abstrak)s, %(putusan)s, %(tahun_putusan)s,
+            %(tanggal_register)s, %(tanggal_musyawarah)s, %(tanggal_dibacakan)s, %(jumlah_view)s,
+            %(jumlah_download)s, %(link_zip)s, %(link_pdf)s
+        )
+        RETURNING id;
+        """
+        
+        cur.execute(query, insert_data)
+        record_id = cur.fetchone()[0]
+        
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        print(f"✅ Successfully inserted informasi_putusan with ID: {record_id}")
+        return record_id
+        
+    except Exception as e:
+        print(f"❌ Failed to insert informasi_putusan: {e}")
+        return None
+
 def test_connection():
     """Test the database connection"""
     try:

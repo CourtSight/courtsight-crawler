@@ -1,31 +1,28 @@
 import scrapy
 import os
 import sys
-import os
 import json
 import re
 import logging
 from datetime import datetime
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-from demo.items import DeskripsiPutusanItem
-from demo.utils.hash import cleanHashText
-from demo.utils.etl.db import readData,insertPutusan
-
+from pidana.items import DeskripsiPutusanItem
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'db'))
+from util import get_putusan_ma_links
 """
 Retrieve link_detail from list_putusan table and scrape each one by one
 Store into informasi_putusan
 """
 class PageInformationScrape(scrapy.Spider):
     putusan = {}
-    name = "scrape_page"
+    name = "details"
     allowed_domains = ["putusan3.mahkamahagung.go.id"]
-    start_urls = list(map(lambda x:x[0],readData("link_detail","list_putusan").result_rows))
+    start_urls = list(map(lambda x:x[0], get_putusan_ma_links()))
 
     custom_settings = {
         'ITEM_PIPELINES': {
-            'demo.pipelines.DeskripsiPutusanItemPipeline': 100,
+            'pidana.pipelines.InformasiPutusanPipeline': 100,
         },
-        'DOWNLOAD_DELAY':1
+        'DOWNLOAD_DELAY': 1
     }
 
     def parse(self, response):
@@ -46,18 +43,18 @@ class PageInformationScrape(scrapy.Spider):
                 if key:
                     item[key] = value
         
-        item["putusan"] = self.putusan
-        item["view"] = view_count
-        item["download"] = download_count
+        item["putusan_terkait"] = self.putusan
+        item["jumlah_view"] = view_count
+        item["jumlah_download"] = download_count
         
         file = response.css("#collapseThree a::attr(href)").getall()
         if len(file) != 0:
-            item["zip"], item["pdf"] = response.css("#collapseThree a::attr(href)").getall()
+            item["link_zip"], item["link_pdf"] = response.css("#collapseThree a::attr(href)").getall()
 
         yield {
             "url":url_putusan,
             "title": title,
-            "description": item,
+            **item,
         }
 
     def handleRelatedPutusan(self,response):
