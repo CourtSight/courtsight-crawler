@@ -1,9 +1,12 @@
 import psycopg2
 from typing import Optional, Dict, Any
 from datetime import datetime
+import dotenv
+import os
+dotenv.load_dotenv()
 
 # Your Supabase connection string
-CONN_STR = "postgresql://postgres.qsxuctlkevfprgyxkqbd:akuharusbisa@aws-1-us-east-2.pooler.supabase.com:5432/postgres"
+CONN_STR = os.getenv("DATABASE_URL")
 
 def get_connection():
     """Get database connection"""

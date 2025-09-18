@@ -36,7 +36,6 @@ create table informasi_putusan (
   catatan_amar text null,
   kaidah text null,
   abstrak text null,
-  putusan text null,
   tahun_putusan integer null,
   tanggal_register text null,
   tanggal_musyawarah text null,
